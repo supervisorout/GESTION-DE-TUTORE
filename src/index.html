@@ -1,22 +1,36 @@
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Gestión de Tutores</title>
 
-  <meta name="description" content="Sistema de gestión y planificación de tutores">
+  <meta
+    name="description"
+    content="Sistema de gestión y planificación de tutores"
+  >
 
-  <!-- Estilos principales -->
+  <meta name="theme-color" content="#123b68">
+
+  <!-- =====================================================
+       ESTILOS
+  ====================================================== -->
+
   <link rel="stylesheet" href="css/styles.css">
+
+  <!-- =====================================================
+       LIBRERÍAS EXTERNAS
+  ====================================================== -->
 
   <!-- ExcelJS para lectura de archivos Excel -->
   <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
 
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 </head>
 
 <body>
@@ -27,32 +41,53 @@
 
   <div id="app">
 
-    <!-- PANTALLA DE INICIO DE SESIÓN -->
+
+    <!-- =====================================================
+         1. PANTALLA DE INICIO DE SESIÓN
+    ====================================================== -->
+
     <section id="login-screen" class="login-screen">
 
       <div class="login-container">
 
         <div class="login-logo">
+
           <div class="logo-symbol">GT</div>
+
           <h1>GESTIÓN DE TUTORES</h1>
-          <p>Plataforma de administración y planificación</p>
+
+          <p>
+            Plataforma de administración y planificación
+          </p>
+
         </div>
+
 
         <form id="login-form">
 
           <div class="form-group">
-            <label for="login-usuario">Usuario</label>
+
+            <label for="login-usuario">
+              Correo electrónico
+            </label>
+
             <input
-              type="text"
+              type="email"
               id="login-usuario"
-              placeholder="Ingresa tu usuario"
+              placeholder="Ingresa tu correo electrónico"
               autocomplete="username"
               required
             >
+
           </div>
 
+
           <div class="form-group">
-            <label for="login-clave">Contraseña</label>
+
+            <label for="login-clave">
+              Contraseña
+            </label>
+
             <input
               type="password"
               id="login-clave"
@@ -60,15 +95,29 @@
               autocomplete="current-password"
               required
             >
+
           </div>
 
-          <div id="login-error" class="login-error"></div>
 
-          <button type="submit" id="btn-login">
+          <!-- Mensajes de error -->
+
+          <div
+            id="login-error"
+            class="login-error"
+            role="alert"
+            aria-live="polite"
+          ></div>
+
+
+          <button
+            type="submit"
+            id="btn-login"
+          >
             Ingresar
           </button>
 
         </form>
+
 
         <div class="login-footer">
           Sistema de Gestión de Tutores
@@ -79,163 +128,390 @@
     </section>
 
 
-    <!-- INTERFAZ PRINCIPAL -->
-    <section id="main-screen" class="main-screen hidden">
 
-      <!-- MENÚ LATERAL -->
-      <aside id="sidebar" class="sidebar">
+    <!-- =====================================================
+         2. INTERFAZ PRINCIPAL
+    ====================================================== -->
+
+    <section
+      id="main-screen"
+      class="main-screen hidden"
+    >
+
+
+      <!-- =================================================
+           MENÚ LATERAL
+      ================================================== -->
+
+      <aside
+        id="sidebar"
+        class="sidebar"
+      >
+
+
+        <!-- LOGOTIPO -->
 
         <div class="sidebar-header">
-          <div class="sidebar-logo">GT</div>
+
+          <div class="sidebar-logo">
+            GT
+          </div>
 
           <div class="sidebar-brand">
+
             <strong>GESTIÓN</strong>
+
             <span>DE TUTORES</span>
+
           </div>
+
         </div>
+
+
+
+        <!-- INFORMACIÓN DEL USUARIO -->
 
         <div class="sidebar-user">
-          <div class="user-avatar" id="user-avatar">U</div>
+
+          <div
+            class="user-avatar"
+            id="user-avatar"
+          >
+            U
+          </div>
 
           <div class="user-information">
-            <strong id="user-name">Usuario</strong>
-            <span id="user-role">Supervisor</span>
+
+            <strong id="user-name">
+              Usuario
+            </strong>
+
+            <span id="user-role">
+              Supervisor
+            </span>
+
           </div>
+
         </div>
+
+
+
+        <!-- NAVEGACIÓN -->
 
         <nav class="sidebar-navigation">
 
-          <div class="nav-section-title">GENERAL</div>
 
-          <button class="nav-item active" data-module="resumen">
+          <!-- GENERAL -->
+
+          <div class="nav-section-title">
+            GENERAL
+          </div>
+
+
+          <button
+            type="button"
+            class="nav-item active"
+            data-module="resumen"
+          >
+
             <span class="nav-icon">▦</span>
+
             <span>Resumen</span>
+
           </button>
 
-          <div class="nav-section-title">OPERACIONES</div>
 
-          <button class="nav-item" data-module="planificaciones">
+
+          <!-- OPERACIONES -->
+
+          <div class="nav-section-title">
+            OPERACIONES
+          </div>
+
+
+          <button
+            type="button"
+            class="nav-item"
+            data-module="planificaciones"
+          >
+
             <span class="nav-icon">▤</span>
+
             <span>Planificaciones</span>
+
           </button>
 
-          <button class="nav-item" data-module="asignaciones">
+
+          <button
+            type="button"
+            class="nav-item"
+            data-module="asignaciones"
+          >
+
             <span class="nav-icon">▥</span>
+
             <span>Asignaciones</span>
+
           </button>
 
-          <button class="nav-item" data-module="tutores">
+
+          <button
+            type="button"
+            class="nav-item"
+            data-module="tutores"
+          >
+
             <span class="nav-icon">♙</span>
+
             <span>Tutores</span>
+
           </button>
 
-          <div class="nav-section-title">ADMINISTRACIÓN</div>
 
-          <button class="nav-item" data-module="bases">
+
+          <!-- ADMINISTRACIÓN -->
+
+          <div class="nav-section-title">
+            ADMINISTRACIÓN
+          </div>
+
+
+          <button
+            type="button"
+            class="nav-item"
+            data-module="bases"
+          >
+
             <span class="nav-icon">▧</span>
+
             <span>Bases</span>
+
           </button>
 
-          <button class="nav-item" data-module="ubicaciones">
+
+          <button
+            type="button"
+            class="nav-item"
+            data-module="ubicaciones"
+          >
+
             <span class="nav-icon">⌖</span>
+
             <span>Ubicaciones</span>
+
           </button>
 
-          <button class="nav-item" data-module="carga">
+
+          <button
+            type="button"
+            class="nav-item"
+            data-module="carga"
+          >
+
             <span class="nav-icon">⇧</span>
+
             <span>Carga de información</span>
+
           </button>
 
-          <button class="nav-item" data-module="asistencia">
+
+          <button
+            type="button"
+            class="nav-item"
+            data-module="asistencia"
+          >
+
             <span class="nav-icon">▣</span>
+
             <span>Asistencia</span>
+
           </button>
 
-          <button class="nav-item" data-module="reportes">
+
+          <button
+            type="button"
+            class="nav-item"
+            data-module="reportes"
+          >
+
             <span class="nav-icon">▥</span>
+
             <span>Reportes</span>
+
           </button>
 
-          <button class="nav-item" data-module="auditoria">
+
+          <button
+            type="button"
+            class="nav-item"
+            data-module="auditoria"
+          >
+
             <span class="nav-icon">◷</span>
+
             <span>Auditoría</span>
+
           </button>
 
-          <div id="admin-navigation" class="admin-navigation hidden">
 
-            <div class="nav-section-title">CONFIGURACIÓN</div>
 
-            <button class="nav-item" data-module="usuarios">
+          <!-- CONFIGURACIÓN: SOLO ADMIN -->
+
+          <div
+            id="admin-navigation"
+            class="admin-navigation hidden"
+          >
+
+            <div class="nav-section-title">
+              CONFIGURACIÓN
+            </div>
+
+
+            <button
+              type="button"
+              class="nav-item"
+              data-module="usuarios"
+            >
+
               <span class="nav-icon">♧</span>
+
               <span>Usuarios</span>
+
             </button>
 
           </div>
 
+
         </nav>
+
+
+
+        <!-- CERRAR SESIÓN -->
 
         <div class="sidebar-footer">
 
-          <button id="btn-logout" class="logout-button">
+          <button
+            type="button"
+            id="btn-logout"
+            class="logout-button"
+          >
+
             <span>⇥</span>
+
             Cerrar sesión
+
           </button>
 
         </div>
+
 
       </aside>
 
 
-      <!-- CONTENIDO PRINCIPAL -->
+
+      <!-- =================================================
+           CONTENIDO PRINCIPAL
+      ================================================== -->
+
       <main class="main-content">
+
+
+        <!-- BARRA SUPERIOR -->
 
         <header class="topbar">
 
-          <button id="btn-menu" class="menu-toggle" aria-label="Abrir menú">
+
+          <button
+            type="button"
+            id="btn-menu"
+            class="menu-toggle"
+            aria-label="Abrir menú"
+          >
             ☰
           </button>
 
+
           <div class="topbar-title">
-            <h2 id="page-title">Resumen</h2>
-            <p id="page-subtitle">Panel general de gestión</p>
+
+            <h2 id="page-title">
+              Resumen
+            </h2>
+
+            <p id="page-subtitle">
+              Panel general de gestión
+            </p>
+
           </div>
 
+
           <div class="topbar-actions">
-            <span class="connection-indicator" id="connection-status">
+
+            <span
+              class="connection-indicator"
+              id="connection-status"
+            >
               Conectando...
             </span>
+
           </div>
+
 
         </header>
 
 
-        <!-- CONTENEDOR DE MÓDULOS -->
-        <div id="module-container" class="module-container">
+
+        <!-- CONTENEDOR DE LOS MÓDULOS -->
+
+        <div
+          id="module-container"
+          class="module-container"
+        >
 
           <div class="welcome-panel">
-            <h2>Bienvenido a Gestión de Tutores</h2>
-            <p>Selecciona una opción del menú para comenzar.</p>
+
+            <h2>
+              Bienvenido a Gestión de Tutores
+            </h2>
+
+            <p>
+              Selecciona una opción del menú para comenzar.
+            </p>
+
           </div>
 
         </div>
 
+
       </main>
 
+
     </section>
+
 
   </div>
 
 
+
   <!-- =====================================================
-       SCRIPTS DE LA APLICACIÓN
+       3. SCRIPTS DE LA APLICACIÓN
   ====================================================== -->
 
+  <!-- Configuración general -->
   <script src="js/config.js"></script>
+
+  <!-- Conexión con Supabase -->
   <script src="js/supabase.js"></script>
+
+  <!-- Autenticación -->
   <script src="js/auth.js"></script>
+
+  <!-- Navegación -->
   <script src="js/navigation.js"></script>
+
+  <!-- Coordinador principal -->
   <script src="js/app.js"></script>
 
-</body>
-</html>
 
+</body>
+
+</html>
