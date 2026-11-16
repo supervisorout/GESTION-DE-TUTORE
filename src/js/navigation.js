@@ -2,7 +2,7 @@
 /* ============================================================
    GESTIÓN DE TUTORES
    NAVIGATION.JS
-   Navegación principal de la aplicación
+   Navegación principal entre módulos
 ============================================================ */
 
 
@@ -11,62 +11,60 @@
 ============================================================ */
 
 const MODULOS = {
-
   resumen: {
-    titulo: "Resumen",
-    subtitulo: "Panel general de gestión"
+    titulo: "Resumen diario",
+    subtitulo: "Vista general de la actividad diaria."
   },
 
   planificaciones: {
     titulo: "Planificaciones",
-    subtitulo: "Administración de jornadas"
+    subtitulo: "Creación y administración de jornadas."
   },
 
   asignaciones: {
     titulo: "Asignaciones",
-    subtitulo: "Gestión de asignaciones de tutores"
+    subtitulo: "Administración de tutores y sus asignaciones."
   },
 
   tutores: {
     titulo: "Tutores",
-    subtitulo: "Administración de tutores"
+    subtitulo: "Registro y administración de tutores."
   },
 
   bases: {
     titulo: "Bases",
-    subtitulo: "Administración de bases"
+    subtitulo: "Administración de bases de trabajo."
   },
 
   ubicaciones: {
     titulo: "Ubicaciones",
-    subtitulo: "Administración de ubicaciones"
+    subtitulo: "Administración de lugares de trabajo."
   },
 
   carga: {
     titulo: "Carga de información",
-    subtitulo: "Importación de información"
+    subtitulo: "Importación y procesamiento de archivos."
   },
 
   asistencia: {
     titulo: "Asistencia",
-    subtitulo: "Registro y control de asistencia"
+    subtitulo: "Registro y consulta de asistencias."
   },
 
   reportes: {
     titulo: "Reportes",
-    subtitulo: "Consultas y estadísticas"
+    subtitulo: "Informes y estadísticas de gestión."
   },
 
   auditoria: {
     titulo: "Auditoría",
-    subtitulo: "Historial de cambios del sistema"
+    subtitulo: "Historial de modificaciones del sistema."
   },
 
   usuarios: {
     titulo: "Usuarios",
-    subtitulo: "Administración de cuentas y permisos"
+    subtitulo: "Administración de cuentas y permisos."
   }
-
 };
 
 
@@ -75,39 +73,24 @@ const MODULOS = {
 ============================================================ */
 
 function inicializarNavegacion() {
+  const botones = document.querySelectorAll(".nav-item");
 
-  document.querySelectorAll(".nav-item").forEach(boton => {
+  botones.forEach((boton) => {
+    boton.addEventListener("click", function () {
+      const modulo = this.dataset.module;
 
-    boton.addEventListener("click", () => {
-
-      const modulo = boton.dataset.module;
-
-      if (!modulo) {
-        return;
-      }
+      if (!modulo) return;
 
       cargarModulo(modulo);
-
       cerrarMenuMovil();
-
     });
-
   });
 
   const botonMenu = document.getElementById("btn-menu");
 
   if (botonMenu) {
-
-    botonMenu.addEventListener("click", () => {
-
-      const sidebar = document.getElementById("sidebar");
-
-      sidebar.classList.toggle("open");
-
-    });
-
+    botonMenu.addEventListener("click", alternarMenuMovil);
   }
-
 }
 
 
@@ -116,121 +99,187 @@ function inicializarNavegacion() {
 ============================================================ */
 
 function cargarModulo(nombreModulo) {
-
-  const modulo = MODULOS[nombreModulo];
-
-  if (!modulo) {
-    console.warn("Módulo no encontrado:", nombreModulo);
-    return;
-  }
-
-  // Comprobar permisos
-  if (nombreModulo === "usuarios" && !esAdministrador()) {
-
-    alert("No tienes permisos para acceder a esta sección.");
-
-    cargarModulo("resumen");
-
+  if (!MODULOS[nombreModulo]) {
+    console.error("Módulo no encontrado:", nombreModulo);
     return;
   }
 
   if (!puedeOperar()) {
+    console.warn("El usuario no tiene permisos para operar.");
     return;
   }
 
-  // Actualizar título
-  document.getElementById("page-title").textContent =
-    modulo.titulo;
+  if (nombreModulo === "usuarios" && !esAdministrador()) {
+    alert("No tienes permisos para acceder a este módulo.");
+    return;
+  }
 
-  document.getElementById("page-subtitle").textContent =
-    modulo.subtitulo;
+  const configuracion = MODULOS[nombreModulo];
 
-  // Actualizar botón activo
-  document.querySelectorAll(".nav-item").forEach(boton => {
+  const titulo = document.getElementById("page-title");
+  const subtitulo = document.getElementById("page-subtitle");
 
-    boton.classList.toggle(
-      "active",
-      boton.dataset.module === nombreModulo
-    );
+  if (titulo) {
+    titulo.textContent = configuracion.titulo;
+  }
 
-  });
+  if (subtitulo) {
+    subtitulo.textContent = configuracion.subtitulo;
+  }
 
-  // Cargar contenido
+  actualizarBotonActivo(nombreModulo);
+
   renderizarModulo(nombreModulo);
-
 }
 
 
 /* ============================================================
-   4. RENDERIZAR CONTENIDO DEL MÓDULO
+   4. ACTUALIZAR BOTÓN ACTIVO
+============================================================ */
+
+function actualizarBotonActivo(nombreModulo) {
+  document.querySelectorAll(".nav-item").forEach((boton) => {
+    const seleccionado = boton.dataset.module === nombreModulo;
+
+    boton.classList.toggle("active", seleccionado);
+  });
+}
+
+
+/* ============================================================
+   5. RENDERIZAR MÓDULO
 ============================================================ */
 
 function renderizarModulo(nombreModulo) {
-
   const contenedor = document.getElementById("module-container");
 
-  if (!contenedor) {
-    return;
-  }
+  if (!contenedor) return;
 
   /*
-    Mientras desarrollamos los módulos,
-    mostraremos una pantalla provisional.
-
-    Cada módulo tendrá posteriormente su propio
-    archivo JavaScript y su interfaz.
+    Cada módulo tendrá su propio renderizador.
+    Por ahora mostramos una pantalla provisional.
   */
 
-  if (nombreModulo === "resumen") {
+  const renderizadores = {
+    resumen: renderizarResumen,
+    planificaciones: renderizarPlanificaciones,
+    asignaciones: renderizarAsignaciones,
+    tutores: renderizarTutores,
+    bases: renderizarBases,
+    ubicaciones: renderizarUbicaciones,
+    carga: renderizarCarga,
+    asistencia: renderizarAsistencia,
+    reportes: renderizarReportes,
+    auditoria: renderizarAuditoria,
+    usuarios: renderizarUsuarios
+  };
 
-    contenedor.innerHTML = `
-      <div class="welcome-panel">
-        <h2>Bienvenido a Gestión de Tutores</h2>
-        <p>
-          Desde aquí podrás administrar las planificaciones,
-          asignaciones, tutores, bases y asistencia.
-        </p>
-      </div>
-    `;
+  const renderizador = renderizadores[nombreModulo];
 
+  if (typeof renderizador === "function") {
+    renderizador();
     return;
-
   }
 
   contenedor.innerHTML = `
-    <div class="welcome-panel">
+    <section class="panel">
       <h2>${MODULOS[nombreModulo].titulo}</h2>
-      <p>
-        Estamos preparando este módulo.
-        Próximamente estará disponible.
-      </p>
-    </div>
+      <p>Este módulo se encuentra en preparación.</p>
+    </section>
   `;
-
 }
 
 
 /* ============================================================
-   5. CERRAR MENÚ MÓVIL
+   6. RENDERIZADORES PROVISIONALES
 ============================================================ */
+
+function mostrarModuloEnPreparacion(nombreModulo) {
+  const contenedor = document.getElementById("module-container");
+
+  if (!contenedor) return;
+
+  contenedor.innerHTML = `
+    <section class="panel">
+      <h2>${MODULOS[nombreModulo].titulo}</h2>
+      <p>${MODULOS[nombreModulo].subtitulo}</p>
+      <p>Este módulo se desarrollará en una próxima etapa.</p>
+    </section>
+  `;
+}
+
+
+function renderizarResumen() {
+  mostrarModuloEnPreparacion("resumen");
+}
+
+function renderizarPlanificaciones() {
+  mostrarModuloEnPreparacion("planificaciones");
+}
+
+function renderizarAsignaciones() {
+  mostrarModuloEnPreparacion("asignaciones");
+}
+
+function renderizarTutores() {
+  mostrarModuloEnPreparacion("tutores");
+}
+
+function renderizarBases() {
+  mostrarModuloEnPreparacion("bases");
+}
+
+function renderizarUbicaciones() {
+  mostrarModuloEnPreparacion("ubicaciones");
+}
+
+function renderizarCarga() {
+  mostrarModuloEnPreparacion("carga");
+}
+
+function renderizarAsistencia() {
+  mostrarModuloEnPreparacion("asistencia");
+}
+
+function renderizarReportes() {
+  mostrarModuloEnPreparacion("reportes");
+}
+
+function renderizarAuditoria() {
+  mostrarModuloEnPreparacion("auditoria");
+}
+
+function renderizarUsuarios() {
+  mostrarModuloEnPreparacion("usuarios");
+}
+
+
+/* ============================================================
+   7. MENÚ PARA DISPOSITIVOS MÓVILES
+============================================================ */
+
+function alternarMenuMovil() {
+  const sidebar = document.querySelector(".sidebar");
+
+  if (!sidebar) return;
+
+  sidebar.classList.toggle("open");
+}
+
 
 function cerrarMenuMovil() {
+  const sidebar = document.querySelector(".sidebar");
 
-  const sidebar = document.getElementById("sidebar");
+  if (!sidebar) return;
 
-  if (sidebar) {
-    sidebar.classList.remove("open");
-  }
-
+  sidebar.classList.remove("open");
 }
 
 
 /* ============================================================
-   6. INICIALIZAR AL CARGAR LA PÁGINA
+   8. INICIALIZAR EVENTOS
 ============================================================ */
 
-document.addEventListener("DOMContentLoaded", () => {
-
+document.addEventListener("DOMContentLoaded", function () {
   inicializarNavegacion();
-
 });
