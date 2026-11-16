@@ -10,20 +10,15 @@ let perfilActual = null;
 
 
 /* ============================================================
-   1. INICIALIZACIÓN
+   1. INICIALIZAR AUTENTICACIÓN
 ============================================================ */
 
 async function inicializarAutenticacion() {
-
   const db = obtenerSupabase();
 
-  if (!db) {
-    mostrarErrorLogin("No se pudo conectar con el servidor.");
-    return;
-  }
+  if (!db) return;
 
   try {
-
     const { data, error } = await db.auth.getSession();
 
     if (error) throw error;
@@ -34,13 +29,12 @@ async function inicializarAutenticacion() {
       mostrarLogin();
     }
 
+    escucharCambiosAutenticacion();
+
   } catch (error) {
-
-    console.error("Error al recuperar sesión:", error);
+    console.error("Error al inicializar autenticación:", error);
     mostrarLogin();
-
   }
-
 }
 
 
@@ -48,35 +42,37 @@ async function inicializarAutenticacion() {
    2. INICIAR SESIÓN
 ============================================================ */
 
-async function iniciarSesion(event) {
-
-  event.preventDefault();
-
+async function iniciarSesion() {
   const db = obtenerSupabase();
 
   if (!db) {
-    mostrarErrorLogin("No hay conexión con Supabase.");
+    mostrarErrorLogin("No se pudo conectar con Supabase.");
     return;
   }
 
   const correo = document
     .getElementById("login-usuario")
-    .value
-    .trim();
+    ?.value.trim();
 
   const clave = document
     .getElementById("login-clave")
-    .value;
+    ?.value;
+
+  if (!correo || !clave) {
+    mostrarErrorLogin("Ingresa tu correo y contraseña.");
+    return;
+  }
 
   const boton = document.getElementById("btn-login");
 
-  boton.disabled = true;
-  boton.textContent = "Ingresando...";
+  if (boton) {
+    boton.disabled = true;
+    boton.textContent = "Ingresando...";
+  }
 
-  mostrarErrorLogin("");
+  ocultarErrorLogin();
 
   try {
-
     const { data, error } = await db.auth.signInWithPassword({
       email: correo,
       password: clave
@@ -87,90 +83,62 @@ async function iniciarSesion(event) {
     await cargarPerfilUsuario(data.user);
 
   } catch (error) {
-
-    console.error("Error de inicio de sesión:", error);
+    console.error("Error al iniciar sesión:", error);
 
     mostrarErrorLogin(
-      "Correo electrónico o contraseña incorrectos."
+      "No fue posible iniciar sesión. Revisa tu correo y contraseña."
     );
 
   } finally {
-
-    boton.disabled = false;
-    boton.textContent = "Ingresar";
-
+    if (boton) {
+      boton.disabled = false;
+      boton.textContent = "Iniciar sesión";
+    }
   }
-
 }
 
 
 /* ============================================================
-   3. CARGAR PERFIL
+   3. CARGAR PERFIL DEL USUARIO
 ============================================================ */
 
 async function cargarPerfilUsuario(usuarioAuth) {
-
   const db = obtenerSupabase();
 
-  if (!db || !usuarioAuth) {
-    mostrarLogin();
-    return;
-  }
+  if (!db || !usuarioAuth) return;
 
   try {
-
     const { data: perfil, error } = await db
       .from("perfiles")
       .select("*")
       .eq("id", usuarioAuth.id)
-      .maybeSingle();
+      .single();
 
     if (error) throw error;
 
-    if (!perfil || !perfil.activo) {
+    if (!perfil) {
+      throw new Error("El perfil no existe.");
+    }
 
+    if (!perfil.activo) {
       await db.auth.signOut();
-
-      mostrarLogin();
-
-      mostrarErrorLogin(
-        "Tu cuenta no está habilitada."
-      );
-
-      return;
-
+      throw new Error("Tu usuario se encuentra desactivado.");
     }
 
     usuarioActual = usuarioAuth;
     perfilActual = perfil;
 
-    const { error: errorAcceso } = await db
-      .from("perfiles")
-      .update({
-        ultimo_acceso: new Date().toISOString()
-      })
-      .eq("id", perfil.id);
-
-    if (errorAcceso) {
-      console.warn("No se pudo actualizar el acceso:", errorAcceso);
-    }
-
     mostrarAplicacion();
 
   } catch (error) {
-
     console.error("Error al cargar perfil:", error);
-
-    await db.auth.signOut();
 
     mostrarLogin();
 
     mostrarErrorLogin(
-      "No se pudo cargar tu perfil."
+      error.message || "No fue posible cargar tu perfil."
     );
-
   }
-
 }
 
 
@@ -179,32 +147,38 @@ async function cargarPerfilUsuario(usuarioAuth) {
 ============================================================ */
 
 function mostrarAplicacion() {
+  const login = document.getElementById("login-screen");
+  const aplicacion = document.getElementById("main-screen");
 
-  document.getElementById("login-screen").classList.add("hidden");
+  if (login) login.classList.add("hidden");
+  if (aplicacion) aplicacion.classList.remove("hidden");
 
-  document.getElementById("main-screen").classList.remove("hidden");
+  const nombreUsuario = document.getElementById("user-name");
+  const rolUsuario = document.getElementById("user-role");
 
-  const nombre = perfilActual.nombre || perfilActual.usuario;
+  if (nombreUsuario) {
+    nombreUsuario.textContent =
+      perfilActual.nombre ||
+      perfilActual.usuario ||
+      usuarioActual.email;
+  }
 
-  document.getElementById("user-name").textContent = nombre;
+  if (rolUsuario) {
+    rolUsuario.textContent = perfilActual.rol;
+  }
 
-  document.getElementById("user-role").textContent =
-    perfilActual.rol === "ADMIN"
-      ? "Administrador"
-      : "Supervisor";
+  const menuAdmin = document.getElementById("admin-navigation");
 
-  document.getElementById("user-avatar").textContent =
-    nombre.charAt(0).toUpperCase();
-
-  document.getElementById("admin-navigation").classList.toggle(
-    "hidden",
-    perfilActual.rol !== "ADMIN"
-  );
+  if (menuAdmin) {
+    menuAdmin.classList.toggle(
+      "hidden",
+      perfilActual.rol !== "ADMIN"
+    );
+  }
 
   if (typeof cargarModulo === "function") {
     cargarModulo("resumen");
   }
-
 }
 
 
@@ -213,29 +187,38 @@ function mostrarAplicacion() {
 ============================================================ */
 
 function mostrarLogin() {
+  const login = document.getElementById("login-screen");
+  const aplicacion = document.getElementById("main-screen");
 
-  document.getElementById("main-screen").classList.add("hidden");
-
-  document.getElementById("login-screen").classList.remove("hidden");
-
-  usuarioActual = null;
-  perfilActual = null;
-
+  if (login) login.classList.remove("hidden");
+  if (aplicacion) aplicacion.classList.add("hidden");
 }
 
 
 /* ============================================================
-   6. ERRORES DE LOGIN
+   6. MENSAJES DE ERROR
 ============================================================ */
 
 function mostrarErrorLogin(mensaje) {
-
   const elemento = document.getElementById("login-error");
 
-  if (elemento) {
-    elemento.textContent = mensaje;
+  if (!elemento) {
+    console.error(mensaje);
+    return;
   }
 
+  elemento.textContent = mensaje;
+  elemento.classList.remove("hidden");
+}
+
+
+function ocultarErrorLogin() {
+  const elemento = document.getElementById("login-error");
+
+  if (!elemento) return;
+
+  elemento.textContent = "";
+  elemento.classList.add("hidden");
 }
 
 
@@ -244,31 +227,24 @@ function mostrarErrorLogin(mensaje) {
 ============================================================ */
 
 async function cerrarSesion() {
-
   const db = obtenerSupabase();
 
   if (!db) return;
 
   try {
-
     const { error } = await db.auth.signOut();
 
     if (error) throw error;
 
+    usuarioActual = null;
+    perfilActual = null;
+
     mostrarLogin();
 
-    document.getElementById("login-form").reset();
-
-    mostrarErrorLogin("");
-
   } catch (error) {
-
     console.error("Error al cerrar sesión:", error);
-
     alert("No fue posible cerrar la sesión.");
-
   }
-
 }
 
 
@@ -277,19 +253,17 @@ async function cerrarSesion() {
 ============================================================ */
 
 function escucharCambiosAutenticacion() {
-
   const db = obtenerSupabase();
 
   if (!db) return;
 
   db.auth.onAuthStateChange((evento) => {
-
     if (evento === "SIGNED_OUT") {
+      usuarioActual = null;
+      perfilActual = null;
       mostrarLogin();
     }
-
   });
-
 }
 
 
@@ -301,35 +275,35 @@ function obtenerUsuarioActual() {
   return usuarioActual;
 }
 
+
 function obtenerPerfilActual() {
   return perfilActual;
 }
+
 
 function esAdministrador() {
   return perfilActual?.rol === "ADMIN";
 }
 
+
 function puedeOperar() {
-
   return (
-    perfilActual &&
-    perfilActual.activo === true &&
-    ["ADMIN", "TUTOR"].includes(perfilActual.rol)
+    perfilActual?.activo === true &&
+    ["ADMIN", "TUTOR"].includes(perfilActual?.rol)
   );
-
 }
 
 
 /* ============================================================
-   10. EVENTOS INICIALES
+   10. EVENTOS DE INTERFAZ
 ============================================================ */
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", function () {
 
-  const formulario = document.getElementById("login-form");
+  const formularioLogin = document.getElementById("btn-login");
 
-  if (formulario) {
-    formulario.addEventListener("submit", iniciarSesion);
+  if (formularioLogin) {
+    formularioLogin.addEventListener("click", iniciarSesion);
   }
 
   const botonSalir = document.getElementById("btn-logout");
@@ -338,10 +312,5 @@ document.addEventListener("DOMContentLoaded", () => {
     botonSalir.addEventListener("click", cerrarSesion);
   }
 
-  inicializarSupabase();
-
   inicializarAutenticacion();
-
-  escucharCambiosAutenticacion();
-
 });
