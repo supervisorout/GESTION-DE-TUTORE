@@ -18,9 +18,7 @@ async function inicializarAutenticacion() {
   const db = obtenerSupabase();
 
   if (!db) {
-    mostrarErrorLogin(
-      "No se pudo conectar con el servidor."
-    );
+    mostrarErrorLogin("No se pudo conectar con el servidor.");
     return;
   }
 
@@ -28,24 +26,17 @@ async function inicializarAutenticacion() {
 
     const { data, error } = await db.auth.getSession();
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     if (data.session) {
-
       await cargarPerfilUsuario(data.session.user);
-
     } else {
-
       mostrarLogin();
-
     }
 
   } catch (error) {
 
     console.error("Error al recuperar sesión:", error);
-
     mostrarLogin();
 
   }
@@ -64,13 +55,11 @@ async function iniciarSesion(event) {
   const db = obtenerSupabase();
 
   if (!db) {
-    mostrarErrorLogin(
-      "No se encuentra disponible la conexión."
-    );
+    mostrarErrorLogin("No hay conexión con Supabase.");
     return;
   }
 
-  const usuario = document
+  const correo = document
     .getElementById("login-usuario")
     .value
     .trim();
@@ -88,58 +77,12 @@ async function iniciarSesion(event) {
 
   try {
 
-    /*
-      El campo USUARIO de nuestra tabla perfiles
-      se utilizará para identificar al usuario.
-
-      Buscamos su correo asociado y autenticamos
-      mediante Supabase Auth.
-    */
-
-    const { data: perfil, error: errorPerfil } = await db
-      .from("perfiles")
-      .select("id, usuario, nombre, rol, activo")
-      .eq("usuario", usuario)
-      .maybeSingle();
-
-    if (errorPerfil) {
-      throw errorPerfil;
-    }
-
-    if (!perfil) {
-      throw new Error("Usuario o contraseña incorrectos.");
-    }
-
-    if (!perfil.activo) {
-      throw new Error("Esta cuenta se encuentra desactivada.");
-    }
-
-    /*
-      Recuperamos el correo de la cuenta Auth
-      a partir del ID del perfil.
-    */
-
-    const { data: usuarioAuth, error: errorAuth } = await db
-      .rpc("obtener_correo_usuario", {
-        p_usuario: usuario
-      });
-
-    if (errorAuth) {
-      throw errorAuth;
-    }
-
-    if (!usuarioAuth) {
-      throw new Error("No fue posible identificar la cuenta.");
-    }
-
     const { data, error } = await db.auth.signInWithPassword({
-      email: usuarioAuth,
+      email: correo,
       password: clave
     });
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     await cargarPerfilUsuario(data.user);
 
@@ -148,7 +91,7 @@ async function iniciarSesion(event) {
     console.error("Error de inicio de sesión:", error);
 
     mostrarErrorLogin(
-      error.message || "No fue posible iniciar sesión."
+      "Correo electrónico o contraseña incorrectos."
     );
 
   } finally {
@@ -162,7 +105,7 @@ async function iniciarSesion(event) {
 
 
 /* ============================================================
-   3. CARGAR PERFIL DEL USUARIO
+   3. CARGAR PERFIL
 ============================================================ */
 
 async function cargarPerfilUsuario(usuarioAuth) {
@@ -182,9 +125,7 @@ async function cargarPerfilUsuario(usuarioAuth) {
       .eq("id", usuarioAuth.id)
       .maybeSingle();
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     if (!perfil || !perfil.activo) {
 
@@ -197,12 +138,12 @@ async function cargarPerfilUsuario(usuarioAuth) {
       );
 
       return;
+
     }
 
     usuarioActual = usuarioAuth;
     perfilActual = perfil;
 
-    // Actualizar último acceso
     const { error: errorAcceso } = await db
       .from("perfiles")
       .update({
@@ -211,10 +152,7 @@ async function cargarPerfilUsuario(usuarioAuth) {
       .eq("id", perfil.id);
 
     if (errorAcceso) {
-      console.warn(
-        "No se pudo actualizar el último acceso:",
-        errorAcceso
-      );
+      console.warn("No se pudo actualizar el acceso:", errorAcceso);
     }
 
     mostrarAplicacion();
@@ -242,17 +180,11 @@ async function cargarPerfilUsuario(usuarioAuth) {
 
 function mostrarAplicacion() {
 
-  document
-    .getElementById("login-screen")
-    .classList.add("hidden");
+  document.getElementById("login-screen").classList.add("hidden");
 
-  document
-    .getElementById("main-screen")
-    .classList.remove("hidden");
+  document.getElementById("main-screen").classList.remove("hidden");
 
-  const nombre =
-    perfilActual.nombre ||
-    perfilActual.usuario;
+  const nombre = perfilActual.nombre || perfilActual.usuario;
 
   document.getElementById("user-name").textContent = nombre;
 
@@ -264,13 +196,10 @@ function mostrarAplicacion() {
   document.getElementById("user-avatar").textContent =
     nombre.charAt(0).toUpperCase();
 
-  // Solo ADMIN puede administrar usuarios
-  document
-    .getElementById("admin-navigation")
-    .classList.toggle(
-      "hidden",
-      perfilActual.rol !== "ADMIN"
-    );
+  document.getElementById("admin-navigation").classList.toggle(
+    "hidden",
+    perfilActual.rol !== "ADMIN"
+  );
 
   if (typeof cargarModulo === "function") {
     cargarModulo("resumen");
@@ -285,13 +214,9 @@ function mostrarAplicacion() {
 
 function mostrarLogin() {
 
-  document
-    .getElementById("main-screen")
-    .classList.add("hidden");
+  document.getElementById("main-screen").classList.add("hidden");
 
-  document
-    .getElementById("login-screen")
-    .classList.remove("hidden");
+  document.getElementById("login-screen").classList.remove("hidden");
 
   usuarioActual = null;
   perfilActual = null;
@@ -300,7 +225,7 @@ function mostrarLogin() {
 
 
 /* ============================================================
-   6. MOSTRAR ERRORES
+   6. ERRORES DE LOGIN
 ============================================================ */
 
 function mostrarErrorLogin(mensaje) {
@@ -322,17 +247,13 @@ async function cerrarSesion() {
 
   const db = obtenerSupabase();
 
-  if (!db) {
-    return;
-  }
+  if (!db) return;
 
   try {
 
     const { error } = await db.auth.signOut();
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
     mostrarLogin();
 
@@ -359,16 +280,12 @@ function escucharCambiosAutenticacion() {
 
   const db = obtenerSupabase();
 
-  if (!db) {
-    return;
-  }
+  if (!db) return;
 
-  db.auth.onAuthStateChange((evento, session) => {
+  db.auth.onAuthStateChange((evento) => {
 
     if (evento === "SIGNED_OUT") {
-
       mostrarLogin();
-
     }
 
   });
@@ -377,37 +294,20 @@ function escucharCambiosAutenticacion() {
 
 
 /* ============================================================
-   9. OBTENER USUARIO ACTUAL
+   9. CONSULTAS DE USUARIO Y PERMISOS
 ============================================================ */
 
 function obtenerUsuarioActual() {
   return usuarioActual;
 }
 
-
-/* ============================================================
-   10. OBTENER PERFIL ACTUAL
-============================================================ */
-
 function obtenerPerfilActual() {
   return perfilActual;
 }
 
-
-/* ============================================================
-   11. COMPROBAR SI ES ADMIN
-============================================================ */
-
 function esAdministrador() {
-
   return perfilActual?.rol === "ADMIN";
-
 }
-
-
-/* ============================================================
-   12. COMPROBAR SI PUEDE OPERAR
-============================================================ */
 
 function puedeOperar() {
 
@@ -421,7 +321,7 @@ function puedeOperar() {
 
 
 /* ============================================================
-   13. CONECTAR FORMULARIOS Y BOTONES
+   10. EVENTOS INICIALES
 ============================================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -429,19 +329,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const formulario = document.getElementById("login-form");
 
   if (formulario) {
-    formulario.addEventListener(
-      "submit",
-      iniciarSesion
-    );
+    formulario.addEventListener("submit", iniciarSesion);
   }
 
   const botonSalir = document.getElementById("btn-logout");
 
   if (botonSalir) {
-    botonSalir.addEventListener(
-      "click",
-      cerrarSesion
-    );
+    botonSalir.addEventListener("click", cerrarSesion);
   }
 
   inicializarSupabase();
