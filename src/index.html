@@ -1,7 +1,6 @@
 
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,508 +9,617 @@
 
   <meta
     name="description"
-    content="Sistema de gestión y planificación de tutores"
+    content="Sistema de gestión y supervisión de tutores."
   >
 
-  <meta name="theme-color" content="#123b68">
-
-  <!-- =====================================================
-       ESTILOS
-  ====================================================== -->
+  <meta name="theme-color" content="#174B83">
 
   <link rel="stylesheet" href="css/styles.css">
 
-  <!-- =====================================================
-       LIBRERÍAS EXTERNAS
-  ====================================================== -->
-
-  <!-- ExcelJS para lectura de archivos Excel -->
-  <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
-
-  <!-- Supabase -->
+  <!-- SUPABASE -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  <!-- EXCELJS -->
+  <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
 </head>
 
 <body>
 
   <!-- =====================================================
-       APLICACIÓN
+       PANTALLA DE ACCESO
   ====================================================== -->
 
-  <div id="app">
+  <section id="login-screen" class="login-screen">
+
+    <div class="login-container">
+
+      <div class="login-brand">
+        <div class="brand-symbol">GT</div>
+
+        <h1>GESTIÓN DE TUTORES</h1>
+
+        <p>
+          Sistema de administración y supervisión
+        </p>
+      </div>
 
 
-    <!-- =====================================================
-         1. PANTALLA DE INICIO DE SESIÓN
-    ====================================================== -->
+      <!-- FORMULARIO DE INICIO DE SESIÓN -->
 
-    <section id="login-screen" class="login-screen">
+      <div id="login-form-container" class="login-card">
 
-      <div class="login-container">
+        <h2>Bienvenido</h2>
 
-        <div class="login-logo">
+        <p class="form-description">
+          Ingresa con tu cuenta para continuar.
+        </p>
 
-          <div class="logo-symbol">GT</div>
+        <div id="login-error" class="error-message hidden"></div>
 
-          <h1>GESTIÓN DE TUTORES</h1>
+        <div class="form-group">
+          <label for="login-usuario">
+            Correo electrónico
+          </label>
 
-          <p>
-            Plataforma de administración y planificación
-          </p>
-
+          <input
+            type="email"
+            id="login-usuario"
+            placeholder="correo@unab.cl"
+            autocomplete="username"
+            required
+          >
         </div>
 
+        <div class="form-group">
+          <label for="login-clave">
+            Contraseña
+          </label>
 
-        <form id="login-form">
-
-          <div class="form-group">
-
-            <label for="login-usuario">
-              Correo electrónico
-            </label>
-
-            <input
-              type="email"
-              id="login-usuario"
-              placeholder="Ingresa tu correo electrónico"
-              autocomplete="username"
-              required
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="login-clave">
-              Contraseña
-            </label>
-
-            <input
-              type="password"
-              id="login-clave"
-              placeholder="Ingresa tu contraseña"
-              autocomplete="current-password"
-              required
-            >
-
-          </div>
-
-
-          <!-- Mensajes de error -->
-
-          <div
-            id="login-error"
-            class="login-error"
-            role="alert"
-            aria-live="polite"
-          ></div>
-
-
-          <button
-            type="submit"
-            id="btn-login"
+          <input
+            type="password"
+            id="login-clave"
+            placeholder="Ingresa tu contraseña"
+            autocomplete="current-password"
+            required
           >
-            Ingresar
-          </button>
+        </div>
 
-        </form>
+        <button
+          type="button"
+          id="btn-login"
+          class="btn btn-primary btn-block"
+        >
+          Iniciar sesión
+        </button>
+
+        <div class="login-divider"></div>
+
+        <p class="register-text">
+          ¿Todavía no tienes una cuenta?
+        </p>
+
+        <button
+          type="button"
+          id="btn-mostrar-registro"
+          class="btn btn-outline btn-block"
+        >
+          Crear una cuenta
+        </button>
+
+      </div>
 
 
-        <div class="login-footer">
-          Sistema de Gestión de Tutores
+      <!-- FORMULARIO DE REGISTRO -->
+
+      <div
+        id="register-form-container"
+        class="login-card hidden"
+      >
+
+        <h2>Crear una cuenta</h2>
+
+        <p class="form-description">
+          Registra tus datos para solicitar acceso al sistema.
+        </p>
+
+        <div id="register-error" class="error-message hidden"></div>
+
+        <div class="form-group">
+          <label for="registro-nombre">
+            Nombre completo
+          </label>
+
+          <input
+            type="text"
+            id="registro-nombre"
+            placeholder="Nombre y apellidos"
+            autocomplete="name"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="registro-usuario">
+            Nombre de usuario
+          </label>
+
+          <input
+            type="text"
+            id="registro-usuario"
+            placeholder="Ejemplo: supervisor01"
+            autocomplete="username"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="registro-correo">
+            Correo electrónico
+          </label>
+
+          <input
+            type="email"
+            id="registro-correo"
+            placeholder="correo@unab.cl"
+            autocomplete="email"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="registro-clave">
+            Contraseña
+          </label>
+
+          <input
+            type="password"
+            id="registro-clave"
+            placeholder="Crea una contraseña"
+            autocomplete="new-password"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="registro-clave-confirmacion">
+            Confirmar contraseña
+          </label>
+
+          <input
+            type="password"
+            id="registro-clave-confirmacion"
+            placeholder="Repite tu contraseña"
+            autocomplete="new-password"
+          >
+        </div>
+
+        <button
+          type="button"
+          id="btn-registro"
+          class="btn btn-primary btn-block"
+        >
+          Solicitar cuenta
+        </button>
+
+        <div class="login-divider"></div>
+
+        <button
+          type="button"
+          id="btn-volver-login"
+          class="btn btn-outline btn-block"
+        >
+          Volver al inicio de sesión
+        </button>
+
+        <p class="registration-notice">
+          Las solicitudes de nuevas cuentas deberán ser
+          autorizadas por el administrador.
+        </p>
+
+      </div>
+
+
+      <div class="login-footer">
+        <span>GESTIÓN DE TUTORES</span>
+        <span>Versión 1.0.0</span>
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- =====================================================
+       APLICACIÓN PRINCIPAL
+  ====================================================== -->
+
+  <div id="main-screen" class="main-screen hidden">
+
+
+    <!-- MENÚ LATERAL -->
+
+    <aside class="sidebar" id="sidebar">
+
+      <div class="sidebar-brand">
+
+        <div class="brand-symbol">GT</div>
+
+        <div class="sidebar-brand-text">
+          <strong>GESTIÓN</strong>
+          <span>DE TUTORES</span>
         </div>
 
       </div>
 
-    </section>
 
+      <!-- INFORMACIÓN DEL USUARIO -->
 
+      <div class="sidebar-user">
 
-    <!-- =====================================================
-         2. INTERFAZ PRINCIPAL
-    ====================================================== -->
-
-    <section
-      id="main-screen"
-      class="main-screen hidden"
-    >
-
-
-      <!-- =================================================
-           MENÚ LATERAL
-      ================================================== -->
-
-      <aside
-        id="sidebar"
-        class="sidebar"
-      >
-
-
-        <!-- LOGOTIPO -->
-
-        <div class="sidebar-header">
-
-          <div class="sidebar-logo">
-            GT
-          </div>
-
-          <div class="sidebar-brand">
-
-            <strong>GESTIÓN</strong>
-
-            <span>DE TUTORES</span>
-
-          </div>
-
+        <div class="user-avatar">
+          <span>U</span>
         </div>
 
-
-
-        <!-- INFORMACIÓN DEL USUARIO -->
-
-        <div class="sidebar-user">
-
-          <div
-            class="user-avatar"
-            id="user-avatar"
-          >
-            U
-          </div>
-
-          <div class="user-information">
-
-            <strong id="user-name">
-              Usuario
-            </strong>
-
-            <span id="user-role">
-              Supervisor
-            </span>
-
-          </div>
-
+        <div class="user-information">
+          <strong id="user-name">Usuario</strong>
+          <span id="user-role">TUTOR</span>
         </div>
 
+      </div>
 
 
-        <!-- NAVEGACIÓN -->
+      <!-- NAVEGACIÓN -->
 
-        <nav class="sidebar-navigation">
+      <nav class="sidebar-navigation">
 
+        <div class="nav-section-title">
+          GENERAL
+        </div>
 
-          <!-- GENERAL -->
-
-          <div class="nav-section-title">
-            GENERAL
-          </div>
-
-
-          <button
-            type="button"
-            class="nav-item active"
-            data-module="resumen"
-          >
-
-            <span class="nav-icon">▦</span>
-
-            <span>Resumen</span>
-
-          </button>
+        <button
+          class="nav-item active"
+          data-module="resumen"
+          type="button"
+        >
+          <span class="nav-icon">▦</span>
+          <span>Resumen diario</span>
+        </button>
 
 
+        <div class="nav-section-title">
+          OPERACIONES
+        </div>
 
-          <!-- OPERACIONES -->
+        <button
+          class="nav-item"
+          data-module="planificaciones"
+          type="button"
+        >
+          <span class="nav-icon">▤</span>
+          <span>Planificaciones</span>
+        </button>
 
-          <div class="nav-section-title">
-            OPERACIONES
-          </div>
+        <button
+          class="nav-item"
+          data-module="asignaciones"
+          type="button"
+        >
+          <span class="nav-icon">☷</span>
+          <span>Asignaciones</span>
+        </button>
 
-
-          <button
-            type="button"
-            class="nav-item"
-            data-module="planificaciones"
-          >
-
-            <span class="nav-icon">▤</span>
-
-            <span>Planificaciones</span>
-
-          </button>
-
-
-          <button
-            type="button"
-            class="nav-item"
-            data-module="asignaciones"
-          >
-
-            <span class="nav-icon">▥</span>
-
-            <span>Asignaciones</span>
-
-          </button>
+        <button
+          class="nav-item"
+          data-module="tutores"
+          type="button"
+        >
+          <span class="nav-icon">♙</span>
+          <span>Tutores</span>
+        </button>
 
 
-          <button
-            type="button"
-            class="nav-item"
-            data-module="tutores"
-          >
+        <div class="nav-section-title">
+          CONFIGURACIÓN
+        </div>
 
-            <span class="nav-icon">♙</span>
+        <button
+          class="nav-item"
+          data-module="bases"
+          type="button"
+        >
+          <span class="nav-icon">▧</span>
+          <span>Bases</span>
+        </button>
 
-            <span>Tutores</span>
+        <button
+          class="nav-item"
+          data-module="ubicaciones"
+          type="button"
+        >
+          <span class="nav-icon">⌖</span>
+          <span>Ubicaciones</span>
+        </button>
 
-          </button>
+
+        <div class="nav-section-title">
+          INFORMACIÓN
+        </div>
+
+        <button
+          class="nav-item"
+          data-module="carga"
+          type="button"
+        >
+          <span class="nav-icon">⇧</span>
+          <span>Carga de información</span>
+        </button>
+
+        <button
+          class="nav-item"
+          data-module="asistencia"
+          type="button"
+        >
+          <span class="nav-icon">✓</span>
+          <span>Asistencia</span>
+        </button>
+
+        <button
+          class="nav-item"
+          data-module="reportes"
+          type="button"
+        >
+          <span class="nav-icon">▥</span>
+          <span>Reportes</span>
+        </button>
+
+        <button
+          class="nav-item"
+          data-module="auditoria"
+          type="button"
+        >
+          <span class="nav-icon">◷</span>
+          <span>Auditoría</span>
+        </button>
 
 
+        <!-- SOLO ADMINISTRADOR -->
 
-          <!-- ADMINISTRACIÓN -->
+        <div id="admin-navigation">
 
           <div class="nav-section-title">
             ADMINISTRACIÓN
           </div>
 
-
           <button
-            type="button"
             class="nav-item"
-            data-module="bases"
-          >
-
-            <span class="nav-icon">▧</span>
-
-            <span>Bases</span>
-
-          </button>
-
-
-          <button
+            data-module="usuarios"
             type="button"
-            class="nav-item"
-            data-module="ubicaciones"
           >
-
-            <span class="nav-icon">⌖</span>
-
-            <span>Ubicaciones</span>
-
-          </button>
-
-
-          <button
-            type="button"
-            class="nav-item"
-            data-module="carga"
-          >
-
-            <span class="nav-icon">⇧</span>
-
-            <span>Carga de información</span>
-
-          </button>
-
-
-          <button
-            type="button"
-            class="nav-item"
-            data-module="asistencia"
-          >
-
-            <span class="nav-icon">▣</span>
-
-            <span>Asistencia</span>
-
-          </button>
-
-
-          <button
-            type="button"
-            class="nav-item"
-            data-module="reportes"
-          >
-
-            <span class="nav-icon">▥</span>
-
-            <span>Reportes</span>
-
-          </button>
-
-
-          <button
-            type="button"
-            class="nav-item"
-            data-module="auditoria"
-          >
-
-            <span class="nav-icon">◷</span>
-
-            <span>Auditoría</span>
-
-          </button>
-
-
-
-          <!-- CONFIGURACIÓN: SOLO ADMIN -->
-
-          <div
-            id="admin-navigation"
-            class="admin-navigation hidden"
-          >
-
-            <div class="nav-section-title">
-              CONFIGURACIÓN
-            </div>
-
-
-            <button
-              type="button"
-              class="nav-item"
-              data-module="usuarios"
-            >
-
-              <span class="nav-icon">♧</span>
-
-              <span>Usuarios</span>
-
-            </button>
-
-          </div>
-
-
-        </nav>
-
-
-
-        <!-- CERRAR SESIÓN -->
-
-        <div class="sidebar-footer">
-
-          <button
-            type="button"
-            id="btn-logout"
-            class="logout-button"
-          >
-
-            <span>⇥</span>
-
-            Cerrar sesión
-
+            <span class="nav-icon">♙</span>
+            <span>Usuarios</span>
           </button>
 
         </div>
 
-
-      </aside>
-
+      </nav>
 
 
-      <!-- =================================================
-           CONTENIDO PRINCIPAL
-      ================================================== -->
+      <!-- PIE DEL MENÚ -->
 
-      <main class="main-content">
+      <div class="sidebar-footer">
+
+        <button
+          type="button"
+          id="btn-logout"
+          class="btn-logout"
+        >
+          <span>⇥</span>
+          Cerrar sesión
+        </button>
+
+      </div>
+
+    </aside>
 
 
-        <!-- BARRA SUPERIOR -->
+    <!-- CONTENIDO PRINCIPAL -->
 
-        <header class="topbar">
+    <main class="main-content">
 
+
+      <!-- BARRA SUPERIOR -->
+
+      <header class="topbar">
+
+        <div class="topbar-left">
 
           <button
             type="button"
             id="btn-menu"
-            class="menu-toggle"
+            class="btn-menu"
             aria-label="Abrir menú"
           >
             ☰
           </button>
 
-
-          <div class="topbar-title">
-
-            <h2 id="page-title">
-              Resumen
-            </h2>
+          <div class="page-heading">
+            <h1 id="page-title">Resumen diario</h1>
 
             <p id="page-subtitle">
-              Panel general de gestión
+              Vista general de la actividad diaria.
             </p>
-
-          </div>
-
-
-          <div class="topbar-actions">
-
-            <span
-              class="connection-indicator"
-              id="connection-status"
-            >
-              Conectando...
-            </span>
-
-          </div>
-
-
-        </header>
-
-
-
-        <!-- CONTENEDOR DE LOS MÓDULOS -->
-
-        <div
-          id="module-container"
-          class="module-container"
-        >
-
-          <div class="welcome-panel">
-
-            <h2>
-              Bienvenido a Gestión de Tutores
-            </h2>
-
-            <p>
-              Selecciona una opción del menú para comenzar.
-            </p>
-
           </div>
 
         </div>
 
 
-      </main>
+        <div class="topbar-actions">
+
+          <span
+            id="connection-status"
+            class="connection-status"
+          >
+            Conectando...
+          </span>
+
+          <button
+            type="button"
+            id="btn-theme"
+            class="btn-theme"
+            aria-label="Cambiar tema"
+            title="Cambiar modo claro u oscuro"
+          >
+            <span id="theme-icon">☾</span>
+            <span id="theme-label">Modo oscuro</span>
+          </button>
+
+        </div>
+
+      </header>
 
 
-    </section>
+      <!-- CONTENEDOR DE MÓDULOS -->
 
+      <section
+        id="module-container"
+        class="module-container"
+      >
+
+        <div class="panel">
+          <h2>Bienvenido a Gestión de Tutores</h2>
+          <p>
+            Selecciona una opción del menú para comenzar.
+          </p>
+        </div>
+
+      </section>
+
+
+      <!-- PIE PRINCIPAL -->
+
+      <footer class="main-footer">
+        <span>GESTIÓN DE TUTORES</span>
+        <span>Plataforma de administración y supervisión</span>
+      </footer>
+
+    </main>
 
   </div>
 
 
-
   <!-- =====================================================
-       3. SCRIPTS DE LA APLICACIÓN
+       CAMBIO ENTRE FORMULARIOS
   ====================================================== -->
 
-  <!-- Configuración general -->
+  <script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+      const loginForm =
+        document.getElementById("login-form-container");
+
+      const registerForm =
+        document.getElementById("register-form-container");
+
+      const btnMostrarRegistro =
+        document.getElementById("btn-mostrar-registro");
+
+      const btnVolverLogin =
+        document.getElementById("btn-volver-login");
+
+
+      if (btnMostrarRegistro) {
+        btnMostrarRegistro.addEventListener("click", function () {
+
+          loginForm.classList.add("hidden");
+          registerForm.classList.remove("hidden");
+
+        });
+      }
+
+
+      if (btnVolverLogin) {
+        btnVolverLogin.addEventListener("click", function () {
+
+          registerForm.classList.add("hidden");
+          loginForm.classList.remove("hidden");
+
+        });
+      }
+
+    });
+
+  </script>
+
+
+  <!-- =====================================================
+       MODO CLARO Y MODO OSCURO
+  ====================================================== -->
+
+  <script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+      const botonTema = document.getElementById("btn-theme");
+      const iconoTema = document.getElementById("theme-icon");
+      const textoTema = document.getElementById("theme-label");
+
+
+      function aplicarTema(tema) {
+
+        document.documentElement.setAttribute(
+          "data-theme",
+          tema
+        );
+
+        localStorage.setItem("gestion-tutores-tema", tema);
+
+        if (tema === "dark") {
+
+          iconoTema.textContent = "☀";
+          textoTema.textContent = "Modo claro";
+
+        } else {
+
+          iconoTema.textContent = "☾";
+          textoTema.textContent = "Modo oscuro";
+
+        }
+
+      }
+
+
+      const temaGuardado =
+        localStorage.getItem("gestion-tutores-tema") || "light";
+
+      aplicarTema(temaGuardado);
+
+
+      if (botonTema) {
+
+        botonTema.addEventListener("click", function () {
+
+          const temaActual =
+            document.documentElement.getAttribute("data-theme");
+
+          aplicarTema(
+            temaActual === "dark" ? "light" : "dark"
+          );
+
+        });
+
+      }
+
+    });
+
+  </script>
+
+
+  <!-- =====================================================
+       ARCHIVOS JAVASCRIPT DE LA APLICACIÓN
+  ====================================================== -->
+
   <script src="js/config.js"></script>
-
-  <!-- Conexión con Supabase -->
   <script src="js/supabase.js"></script>
-
-  <!-- Autenticación -->
   <script src="js/auth.js"></script>
-
-  <!-- Navegación -->
   <script src="js/navigation.js"></script>
-
-  <!-- Coordinador principal -->
   <script src="js/app.js"></script>
 
-
 </body>
-
 </html>
