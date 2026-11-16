@@ -57,8 +57,11 @@ async function iniciarSesion() {
   const db = obtenerSupabase();
 
   if (!db) {
+
     mostrarErrorLogin("No se pudo conectar con Supabase.");
+
     return;
+
   }
 
   const correo = document
@@ -151,9 +154,8 @@ async function registrarUsuario() {
     ?.value;
 
   ocultarErrorRegistro();
-  ocultarMensajeRegistro();
 
-  /* VALIDACIONES */
+  ocultarMensajeRegistro();
 
   if (!nombre || !usuario || !correo || !clave || !confirmacion) {
 
@@ -251,10 +253,21 @@ async function registrarUsuario() {
 
     }
 
+    if (
+      data.user.identities &&
+      data.user.identities.length === 0
+    ) {
+
+      throw new Error(
+        "Este correo electrónico ya tiene una cuenta registrada."
+      );
+
+    }
+
     /*
-      Si Supabase devuelve una sesión automáticamente,
-      la cerramos porque la cuenta todavía está pendiente
-      de aprobación por el administrador.
+      Las cuentas nuevas deben esperar aprobación.
+      Si Supabase entrega una sesión automática,
+      la cerramos inmediatamente.
     */
 
     if (data.session) {
@@ -318,9 +331,17 @@ async function cargarPerfilUsuario(usuarioAuth) {
 
     }
 
-    if (!perfil.activo) {
+    /*
+      VALIDAR APROBACIÓN Y ACTIVACIÓN
+    */
+
+    if (
+      perfil.estado_aprobacion !== "APROBADO" ||
+      perfil.activo !== true
+    ) {
 
       usuarioActual = null;
+
       perfilActual = null;
 
       await db.auth.signOut();
@@ -328,14 +349,24 @@ async function cargarPerfilUsuario(usuarioAuth) {
       mostrarLogin();
 
       mostrarErrorLogin(
-        "Tu cuenta todavía no ha sido autorizada por el administrador."
+        perfil.estado_aprobacion === "PENDIENTE"
+          ? "Tu cuenta todavía está pendiente de aprobación por el administrador."
+          : "Tu cuenta está desactivada. Contacta al administrador."
       );
 
       return;
 
     }
 
+    /*
+      VALIDAR ROL
+    */
+
     if (!["ADMIN", "TUTOR"].includes(perfil.rol)) {
+
+      usuarioActual = null;
+
+      perfilActual = null;
 
       await db.auth.signOut();
 
@@ -349,9 +380,44 @@ async function cargarPerfilUsuario(usuarioAuth) {
 
     }
 
+    /*
+      GUARDAR USUARIO Y PERFIL
+    */
+
     usuarioActual = usuarioAuth;
 
     perfilActual = perfil;
+
+    /*
+      ACTUALIZAR ÚLTIMO ACCESO
+    */
+
+    const nuevoAcceso = new Date().toISOString();
+
+    const { error: errorAcceso } = await db
+
+      .from("perfiles")
+
+      .update({
+
+        ultimo_acceso: nuevoAcceso
+
+      })
+
+      .eq("id", usuarioAuth.id);
+
+    if (errorAcceso) {
+
+      console.error(
+        "No se pudo actualizar el último acceso:",
+        errorAcceso
+      );
+
+    } else {
+
+      perfilActual.ultimo_acceso = nuevoAcceso;
+
+    }
 
     ocultarErrorLogin();
 
@@ -371,11 +437,7 @@ async function cargarPerfilUsuario(usuarioAuth) {
       "No fue posible validar tu perfil. Contacta al administrador."
     );
 
-    if (error.message !== "Auth session missing!") {
-
-      await db.auth.signOut().catch(() => {});
-
-    }
+    await db.auth.signOut().catch(() => {});
 
   }
 
@@ -654,7 +716,7 @@ function limpiarFormularioRegistro() {
 
   ];
 
-  campos.forEach((id) => {
+  campos.forEach(id => {
 
     const campo = document.getElementById(id);
 
@@ -666,7 +728,7 @@ function limpiarFormularioRegistro() {
 
 
 /* ============================================================
-   11. CAMBIAR ESTADO DE BOTONES
+   11. ESTADO DE BOTONES
 ============================================================ */
 
 function cambiarEstadoBoton(boton, deshabilitado, texto) {
@@ -723,7 +785,7 @@ function escucharCambiosAutenticacion() {
 
   if (!db) return;
 
-  db.auth.onAuthStateChange((evento) => {
+  db.auth.onAuthStateChange(evento => {
 
     if (evento === "SIGNED_OUT") {
 
@@ -770,6 +832,8 @@ function puedeOperar() {
   return (
 
     perfilActual?.activo === true &&
+
+    perfilActual?.estado_aprobacion === "APROBADO" &&
 
     ["ADMIN", "TUTOR"].includes(perfilActual?.rol)
 
