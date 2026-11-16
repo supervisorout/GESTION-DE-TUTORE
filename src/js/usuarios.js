@@ -2,21 +2,15 @@
 /* ============================================================
    GESTIÓN DE TUTORES
    USUARIOS.JS
-   Administración de cuentas y permisos
-============================================================ */
-
-
-/* ============================================================
-   1. VARIABLES
+   Administración de cuentas
 ============================================================ */
 
 let usuariosRegistrados = [];
-
 let filtroUsuariosActual = "TODOS";
 
 
 /* ============================================================
-   2. RENDERIZAR MÓDULO
+   1. RENDERIZAR MÓDULO
 ============================================================ */
 
 async function renderizarUsuarios() {
@@ -28,7 +22,7 @@ async function renderizarUsuarios() {
   if (!esAdministrador()) {
 
     contenedor.innerHTML = `
-      <div class="alert">
+      <div class="alert alert-error">
         No tienes permisos para administrar usuarios.
       </div>
     `;
@@ -38,9 +32,11 @@ async function renderizarUsuarios() {
   }
 
   contenedor.innerHTML = `
+
     <div class="module-content">
 
       <div class="toolbar">
+
         <div>
           <h2>Administración de usuarios</h2>
           <p>Aprueba cuentas y administra los permisos de acceso.</p>
@@ -49,9 +45,11 @@ async function renderizarUsuarios() {
         <button class="btn btn-primary" id="btn-actualizar-usuarios">
           ↻ Actualizar
         </button>
+
       </div>
 
-      <div class="stats-grid" id="usuarios-estadisticas">
+
+      <div class="stats-grid">
 
         <div class="stat-card">
           <span>Total de cuentas</span>
@@ -59,23 +57,25 @@ async function renderizarUsuarios() {
         </div>
 
         <div class="stat-card">
-          <span>Pendientes de aprobación</span>
+          <span>Pendientes</span>
           <strong id="usuarios-pendientes">0</strong>
         </div>
 
         <div class="stat-card">
-          <span>Cuentas activas</span>
+          <span>Activos</span>
           <strong id="usuarios-activos">0</strong>
         </div>
 
         <div class="stat-card">
-          <span>Cuentas desactivadas</span>
+          <span>Desactivados</span>
           <strong id="usuarios-inactivos">0</strong>
         </div>
 
       </div>
 
+
       <div id="usuarios-mensaje" class="hidden"></div>
+
 
       <div class="card">
 
@@ -83,7 +83,7 @@ async function renderizarUsuarios() {
 
           <div>
             <h3>Listado de cuentas</h3>
-            <p>Busca usuarios y administra su acceso.</p>
+            <p>Administración de supervisores del sistema.</p>
           </div>
 
           <div class="toolbar-actions">
@@ -91,12 +91,12 @@ async function renderizarUsuarios() {
             <input
               type="search"
               id="buscar-usuario"
-              placeholder="Buscar por nombre, usuario o correo..."
+              placeholder="Buscar usuario..."
             >
 
             <select id="filtro-estado-usuarios">
 
-              <option value="TODOS">Todos los usuarios</option>
+              <option value="TODOS">Todos</option>
               <option value="PENDIENTES">Pendientes</option>
               <option value="ACTIVOS">Activos</option>
               <option value="INACTIVOS">Desactivados</option>
@@ -106,6 +106,7 @@ async function renderizarUsuarios() {
           </div>
 
         </div>
+
 
         <div class="table-container">
 
@@ -138,6 +139,7 @@ async function renderizarUsuarios() {
       </div>
 
     </div>
+
   `;
 
   inicializarEventosUsuarios();
@@ -148,7 +150,7 @@ async function renderizarUsuarios() {
 
 
 /* ============================================================
-   3. EVENTOS DEL MÓDULO
+   2. EVENTOS
 ============================================================ */
 
 function inicializarEventosUsuarios() {
@@ -163,7 +165,7 @@ function inicializarEventosUsuarios() {
 
   document
     .getElementById("filtro-estado-usuarios")
-    ?.addEventListener("change", (evento) => {
+    ?.addEventListener("change", evento => {
 
       filtroUsuariosActual = evento.target.value;
 
@@ -175,15 +177,11 @@ function inicializarEventosUsuarios() {
     .getElementById("tabla-usuarios")
     ?.addEventListener("click", manejarAccionesUsuarios);
 
-  document
-    .getElementById("tabla-usuarios")
-    ?.addEventListener("change", manejarCambiosTablaUsuarios);
-
 }
 
 
 /* ============================================================
-   4. CARGAR USUARIOS DESDE SUPABASE
+   3. CARGAR USUARIOS
 ============================================================ */
 
 async function cargarUsuariosRegistrados() {
@@ -192,9 +190,7 @@ async function cargarUsuariosRegistrados() {
 
   const tabla = document.getElementById("tabla-usuarios");
 
-  if (!db || !tabla) return;
-
-  if (!esAdministrador()) return;
+  if (!db || !tabla || !esAdministrador()) return;
 
   tabla.innerHTML = `
     <tr>
@@ -214,6 +210,7 @@ async function cargarUsuariosRegistrados() {
         nombre,
         rol,
         activo,
+        estado_aprobacion,
         fecha_registro,
         ultimo_acceso
       `)
@@ -230,7 +227,7 @@ async function cargarUsuariosRegistrados() {
 
   } catch (error) {
 
-    console.error("Error al cargar usuarios:", error);
+    console.error(error);
 
     tabla.innerHTML = `
       <tr>
@@ -241,11 +238,53 @@ async function cargarUsuariosRegistrados() {
     `;
 
     mostrarMensajeUsuarios(
-      "Error al consultar las cuentas: " + error.message,
+      "Error al consultar usuarios: " + error.message,
       "error"
     );
 
   }
+
+}
+
+
+/* ============================================================
+   4. OBTENER ESTADO
+============================================================ */
+
+function obtenerEstadoUsuario(usuario) {
+
+  if (usuario.estado_aprobacion === "PENDIENTE") {
+
+    return "PENDIENTE";
+
+  }
+
+  if (usuario.estado_aprobacion === "APROBADO" && usuario.activo) {
+
+    return "ACTIVO";
+
+  }
+
+  return "INACTIVO";
+
+}
+
+
+function textoEstadoUsuario(usuario) {
+
+  const estado = obtenerEstadoUsuario(usuario);
+
+  const etiquetas = {
+
+    PENDIENTE: `<span class="badge badge-warning">Pendiente</span>`,
+
+    ACTIVO: `<span class="badge badge-success">Activo</span>`,
+
+    INACTIVO: `<span class="badge badge-danger">Desactivado</span>`
+
+  };
+
+  return etiquetas[estado];
 
 }
 
@@ -259,21 +298,20 @@ function actualizarEstadisticasUsuarios() {
   const total = usuariosRegistrados.length;
 
   const pendientes = usuariosRegistrados.filter(
-    usuario => !usuario.activo
+    u => obtenerEstadoUsuario(u) === "PENDIENTE"
   ).length;
 
   const activos = usuariosRegistrados.filter(
-    usuario => usuario.activo
+    u => obtenerEstadoUsuario(u) === "ACTIVO"
   ).length;
 
-  const inactivos = total - activos;
+  const inactivos = usuariosRegistrados.filter(
+    u => obtenerEstadoUsuario(u) === "INACTIVO"
+  ).length;
 
   establecerTexto("usuarios-total", total);
-
   establecerTexto("usuarios-pendientes", pendientes);
-
   establecerTexto("usuarios-activos", activos);
-
   establecerTexto("usuarios-inactivos", inactivos);
 
 }
@@ -283,24 +321,16 @@ function establecerTexto(id, valor) {
 
   const elemento = document.getElementById(id);
 
-  if (elemento) {
-
-    elemento.textContent = valor;
-
-  }
+  if (elemento) elemento.textContent = valor;
 
 }
 
 
 /* ============================================================
-   6. FILTRAR Y BUSCAR
+   6. FILTROS
 ============================================================ */
 
 function aplicarFiltrosUsuarios() {
-
-  const tabla = document.getElementById("tabla-usuarios");
-
-  if (!tabla) return;
 
   const busqueda = (
     document.getElementById("buscar-usuario")?.value || ""
@@ -308,27 +338,16 @@ function aplicarFiltrosUsuarios() {
 
   let resultados = [...usuariosRegistrados];
 
-  if (filtroUsuariosActual === "PENDIENTES") {
+  if (filtroUsuariosActual !== "TODOS") {
 
-    resultados = resultados.filter(
-      usuario => !usuario.activo
-    );
+    resultados = resultados.filter(usuario => {
 
-  }
+      return obtenerEstadoUsuario(usuario) ===
+        filtroUsuariosActual.replace("PENDIENTES", "PENDIENTE")
+          .replace("ACTIVOS", "ACTIVO")
+          .replace("INACTIVOS", "INACTIVO");
 
-  if (filtroUsuariosActual === "ACTIVOS") {
-
-    resultados = resultados.filter(
-      usuario => usuario.activo
-    );
-
-  }
-
-  if (filtroUsuariosActual === "INACTIVOS") {
-
-    resultados = resultados.filter(
-      usuario => !usuario.activo
-    );
+    });
 
   }
 
@@ -339,9 +358,7 @@ function aplicarFiltrosUsuarios() {
       const texto = [
 
         usuario.nombre,
-
         usuario.usuario,
-
         usuario.id
 
       ].join(" ").toLowerCase();
@@ -352,13 +369,16 @@ function aplicarFiltrosUsuarios() {
 
   }
 
-  /*
-    Los pendientes aparecen primero.
-  */
-
   resultados.sort((a, b) => {
 
-    return Number(a.activo) - Number(b.activo);
+    const orden = {
+      PENDIENTE: 1,
+      ACTIVO: 2,
+      INACTIVO: 3
+    };
+
+    return orden[obtenerEstadoUsuario(a)] -
+      orden[obtenerEstadoUsuario(b)];
 
   });
 
@@ -368,7 +388,7 @@ function aplicarFiltrosUsuarios() {
 
 
 /* ============================================================
-   7. DIBUJAR TABLA
+   7. TABLA DE USUARIOS
 ============================================================ */
 
 function dibujarTablaUsuarios(usuarios) {
@@ -381,9 +401,7 @@ function dibujarTablaUsuarios(usuarios) {
 
     tabla.innerHTML = `
       <tr>
-        <td colspan="7">
-          No se encontraron usuarios.
-        </td>
+        <td colspan="7">No se encontraron usuarios.</td>
       </tr>
     `;
 
@@ -395,89 +413,103 @@ function dibujarTablaUsuarios(usuarios) {
 
   tabla.innerHTML = usuarios.map(usuario => {
 
-    const esPropio = usuario.id === idActual;
+    const propio = usuario.id === idActual;
 
-    const nombre = escaparHTML(
-      usuario.nombre || "Sin nombre"
-    );
+    const estado = obtenerEstadoUsuario(usuario);
 
-    const nombreUsuario = escaparHTML(
-      usuario.usuario || "Sin usuario"
-    );
+    const nombre = escaparHTML(usuario.nombre || "Sin nombre");
 
-    const rol = escaparHTML(usuario.rol || "TUTOR");
+    const usuarioTexto = escaparHTML(usuario.usuario || "Sin usuario");
 
-    const estado = usuario.activo
-      ? `<span class="badge badge-success">Activo</span>`
-      : `<span class="badge badge-warning">Pendiente / Inactivo</span>`;
+    let botonEstado = "";
 
-    const fechaRegistro = formatearFechaUsuario(
-      usuario.fecha_registro
-    );
+    if (!propio && estado === "PENDIENTE") {
 
-    const ultimoAcceso = formatearFechaUsuario(
-      usuario.ultimo_acceso
-    );
-
-    const accionEstado = usuario.activo
-      ? "desactivar"
-      : "aprobar";
-
-    const textoEstado = usuario.activo
-      ? "Desactivar"
-      : "Aprobar";
-
-    const botonEstado = esPropio
-      ? `<span class="text-muted">Cuenta actual</span>`
-      : `
+      botonEstado = `
         <button
-          class="btn btn-small ${usuario.activo ? "btn-secondary" : "btn-primary"}"
-          data-accion="${accionEstado}"
+          class="btn btn-small btn-primary"
+          data-accion="aprobar"
           data-id="${escaparHTML(usuario.id)}"
         >
-          ${textoEstado}
+          Aprobar
         </button>
       `;
 
+    }
+
+    if (!propio && estado === "ACTIVO") {
+
+      botonEstado = `
+        <button
+          class="btn btn-small btn-secondary"
+          data-accion="desactivar"
+          data-id="${escaparHTML(usuario.id)}"
+        >
+          Desactivar
+        </button>
+      `;
+
+    }
+
+    if (!propio && estado === "INACTIVO") {
+
+      botonEstado = `
+        <button
+          class="btn btn-small btn-primary"
+          data-accion="reactivar"
+          data-id="${escaparHTML(usuario.id)}"
+        >
+          Reactivar
+        </button>
+      `;
+
+    }
+
     return `
+
       <tr>
 
         <td>
           <strong>${nombre}</strong>
-          ${esPropio ? `<span class="badge">Tú</span>` : ""}
+          ${propio ? `<span class="badge">Tú</span>` : ""}
         </td>
 
-        <td>${nombreUsuario}</td>
+        <td>${usuarioTexto}</td>
 
         <td>
+
           <select
             class="select-rol-usuario"
             data-id="${escaparHTML(usuario.id)}"
-            ${esPropio ? "disabled" : ""}
+            ${propio ? "disabled" : ""}
           >
-            <option value="TUTOR" ${rol === "TUTOR" ? "selected" : ""}>
+
+            <option value="TUTOR" ${usuario.rol === "TUTOR" ? "selected" : ""}>
               TUTOR
             </option>
 
-            <option value="ADMIN" ${rol === "ADMIN" ? "selected" : ""}>
+            <option value="ADMIN" ${usuario.rol === "ADMIN" ? "selected" : ""}>
               ADMIN
             </option>
+
           </select>
+
         </td>
 
-        <td>${estado}</td>
+        <td>${textoEstadoUsuario(usuario)}</td>
 
-        <td>${fechaRegistro}</td>
+        <td>${formatearFechaUsuario(usuario.fecha_registro)}</td>
 
-        <td>${ultimoAcceso}</td>
+        <td>${formatearFechaUsuario(usuario.ultimo_acceso)}</td>
 
         <td>
+
           <div class="table-actions">
 
             ${botonEstado}
 
             ${
-              !esPropio
+              !propio
                 ? `
                   <button
                     class="btn btn-small btn-outline"
@@ -487,13 +519,15 @@ function dibujarTablaUsuarios(usuarios) {
                     Guardar rol
                   </button>
                 `
-                : ""
+                : "Cuenta actual"
             }
 
           </div>
+
         </td>
 
       </tr>
+
     `;
 
   }).join("");
@@ -502,7 +536,7 @@ function dibujarTablaUsuarios(usuarios) {
 
 
 /* ============================================================
-   8. MANEJAR ACCIONES
+   8. ACCIONES DE TABLA
 ============================================================ */
 
 async function manejarAccionesUsuarios(evento) {
@@ -515,17 +549,21 @@ async function manejarAccionesUsuarios(evento) {
 
   const id = boton.dataset.id;
 
-  if (!id) return;
-
   if (accion === "aprobar") {
 
-    await cambiarEstadoUsuario(id, true);
+    await cambiarEstadoUsuario(id, "APROBAR");
 
   }
 
   if (accion === "desactivar") {
 
-    await cambiarEstadoUsuario(id, false);
+    await cambiarEstadoUsuario(id, "DESACTIVAR");
+
+  }
+
+  if (accion === "reactivar") {
+
+    await cambiarEstadoUsuario(id, "REACTIVAR");
 
   }
 
@@ -539,17 +577,17 @@ async function manejarAccionesUsuarios(evento) {
 
 
 /* ============================================================
-   9. APROBAR O DESACTIVAR USUARIO
+   9. CAMBIAR ESTADO DE CUENTA
 ============================================================ */
 
-async function cambiarEstadoUsuario(id, nuevoEstado) {
+async function cambiarEstadoUsuario(id, accion) {
 
   const db = obtenerSupabase();
 
   if (!db || !esAdministrador()) return;
 
   const usuario = usuariosRegistrados.find(
-    item => item.id === id
+    u => u.id === id
   );
 
   if (!usuario) return;
@@ -557,7 +595,7 @@ async function cambiarEstadoUsuario(id, nuevoEstado) {
   if (id === obtenerUsuarioActual()?.id) {
 
     mostrarMensajeUsuarios(
-      "No puedes modificar el estado de tu propia cuenta.",
+      "No puedes modificar tu propia cuenta.",
       "error"
     );
 
@@ -565,13 +603,38 @@ async function cambiarEstadoUsuario(id, nuevoEstado) {
 
   }
 
-  const accion = nuevoEstado ? "aprobar" : "desactivar";
+  const configuraciones = {
 
-  const confirmado = confirm(
-    `¿Deseas ${accion} la cuenta de ${usuario.nombre || usuario.usuario}?`
-  );
+    APROBAR: {
+      estado: "APROBADO",
+      activo: true,
+      pregunta: "¿Deseas aprobar esta cuenta?",
+      exito: "La cuenta fue aprobada correctamente."
+    },
 
-  if (!confirmado) return;
+    DESACTIVAR: {
+      estado: "APROBADO",
+      activo: false,
+      pregunta: "¿Deseas desactivar esta cuenta?",
+      exito: "La cuenta fue desactivada correctamente."
+    },
+
+    REACTIVAR: {
+      estado: "APROBADO",
+      activo: true,
+      pregunta: "¿Deseas reactivar esta cuenta?",
+      exito: "La cuenta fue reactivada correctamente."
+    }
+
+  };
+
+  const config = configuraciones[accion];
+
+  if (!config) return;
+
+  if (!confirm(
+    `${config.pregunta}\n\nUsuario: ${usuario.nombre || usuario.usuario}`
+  )) return;
 
   try {
 
@@ -581,7 +644,9 @@ async function cambiarEstadoUsuario(id, nuevoEstado) {
 
       .update({
 
-        activo: nuevoEstado
+        estado_aprobacion: config.estado,
+
+        activo: config.activo
 
       })
 
@@ -589,18 +654,13 @@ async function cambiarEstadoUsuario(id, nuevoEstado) {
 
     if (error) throw error;
 
-    mostrarMensajeUsuarios(
-      nuevoEstado
-        ? "La cuenta fue aprobada correctamente."
-        : "La cuenta fue desactivada correctamente.",
-      "success"
-    );
+    mostrarMensajeUsuarios(config.exito, "success");
 
     await cargarUsuariosRegistrados();
 
   } catch (error) {
 
-    console.error("Error al cambiar estado:", error);
+    console.error(error);
 
     mostrarMensajeUsuarios(
       "No fue posible modificar la cuenta: " + error.message,
@@ -623,7 +683,7 @@ async function guardarRolUsuario(id) {
   if (!db || !esAdministrador()) return;
 
   const usuario = usuariosRegistrados.find(
-    item => item.id === id
+    u => u.id === id
   );
 
   if (!usuario) return;
@@ -647,17 +707,6 @@ async function guardarRolUsuario(id) {
 
   const nuevoRol = selector.value;
 
-  if (!["ADMIN", "TUTOR"].includes(nuevoRol)) {
-
-    mostrarMensajeUsuarios(
-      "El rol seleccionado no es válido.",
-      "error"
-    );
-
-    return;
-
-  }
-
   if (nuevoRol === usuario.rol) {
 
     mostrarMensajeUsuarios(
@@ -669,11 +718,9 @@ async function guardarRolUsuario(id) {
 
   }
 
-  const confirmado = confirm(
-    `¿Deseas cambiar el rol de ${usuario.nombre || usuario.usuario} a ${nuevoRol}?`
-  );
-
-  if (!confirmado) return;
+  if (!confirm(
+    `¿Cambiar el rol de ${usuario.nombre || usuario.usuario} a ${nuevoRol}?`
+  )) return;
 
   try {
 
@@ -681,11 +728,7 @@ async function guardarRolUsuario(id) {
 
       .from("perfiles")
 
-      .update({
-
-        rol: nuevoRol
-
-      })
+      .update({ rol: nuevoRol })
 
       .eq("id", id);
 
@@ -700,7 +743,7 @@ async function guardarRolUsuario(id) {
 
   } catch (error) {
 
-    console.error("Error al cambiar rol:", error);
+    console.error(error);
 
     mostrarMensajeUsuarios(
       "No fue posible actualizar el rol: " + error.message,
@@ -713,24 +756,7 @@ async function guardarRolUsuario(id) {
 
 
 /* ============================================================
-   11. CAMBIOS EN SELECTORES
-============================================================ */
-
-function manejarCambiosTablaUsuarios(evento) {
-
-  const selector = evento.target.closest(
-    ".select-rol-usuario"
-  );
-
-  if (!selector) return;
-
-  selector.dataset.modificado = "true";
-
-}
-
-
-/* ============================================================
-   12. MENSAJES
+   11. MENSAJES
 ============================================================ */
 
 function mostrarMensajeUsuarios(mensaje, tipo = "success") {
@@ -749,7 +775,7 @@ function mostrarMensajeUsuarios(mensaje, tipo = "success") {
 
 
 /* ============================================================
-   13. FORMATEAR FECHAS
+   12. FORMATEAR FECHAS
 ============================================================ */
 
 function formatearFechaUsuario(fecha) {
@@ -763,13 +789,9 @@ function formatearFechaUsuario(fecha) {
   return valor.toLocaleString("es-CL", {
 
     day: "2-digit",
-
     month: "2-digit",
-
     year: "numeric",
-
     hour: "2-digit",
-
     minute: "2-digit"
 
   });
@@ -778,7 +800,7 @@ function formatearFechaUsuario(fecha) {
 
 
 /* ============================================================
-   14. SEGURIDAD HTML
+   13. ESCAPAR HTML
 ============================================================ */
 
 function escaparHTML(valor) {
@@ -788,13 +810,9 @@ function escaparHTML(valor) {
     const entidades = {
 
       "&": "&amp;",
-
       "<": "&lt;",
-
       ">": "&gt;",
-
       '"': "&quot;",
-
       "'": "&#039;"
 
     };
