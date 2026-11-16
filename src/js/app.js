@@ -2,178 +2,62 @@
 /* ============================================================
    GESTIÓN DE TUTORES
    APP.JS
-   Coordinador principal de la aplicación
+   Inicialización general de la aplicación
 ============================================================ */
 
-
-/* ============================================================
-   1. INICIALIZACIÓN GENERAL
-============================================================ */
-
-let aplicacionInicializada = false;
-
-async function inicializarAplicacion() {
-
-  if (aplicacionInicializada) {
-    return;
-  }
-
+function inicializarAplicacion() {
   console.log("Iniciando Gestión de Tutores...");
 
-  // Inicializar conexión
   const db = obtenerSupabase();
 
   if (!db) {
-
     actualizarEstadoConexion(
-      "Sin configuración",
-      false
+      "No se pudo inicializar Supabase",
+      "error"
     );
-
-    console.error(
-      "No se pudo inicializar Supabase."
-    );
-
     return;
   }
 
   actualizarEstadoConexion(
-    "Conectando...",
-    false
+    "Supabase configurado",
+    "success"
   );
 
-  // Verificar conexión
-  await comprobarConexion();
-
-  aplicacionInicializada = true;
-
-  console.log(
-    "Aplicación inicializada correctamente."
-  );
-
+  console.log("Cliente Supabase inicializado correctamente.");
 }
 
 
 /* ============================================================
-   2. COMPROBAR CONEXIÓN CON SUPABASE
+   ACTUALIZAR INDICADOR DE CONEXIÓN
 ============================================================ */
 
-async function comprobarConexion() {
+function actualizarEstadoConexion(mensaje, estado = "info") {
+  const indicador = document.getElementById("connection-status");
 
-  const db = obtenerSupabase();
-
-  if (!db) {
-    return false;
-  }
-
-  try {
-
-    const { error } = await db
-      .from("areas")
-      .select("id")
-      .limit(1);
-
-    if (error) {
-      throw error;
-    }
-
-    actualizarEstadoConexion(
-      "Conectado",
-      true
-    );
-
-    return true;
-
-  } catch (error) {
-
-    console.error(
-      "Error de conexión:",
-      error
-    );
-
-    actualizarEstadoConexion(
-      "Error de conexión",
-      false
-    );
-
-    return false;
-
-  }
-
-}
-
-
-/* ============================================================
-   3. ACTUALIZAR INDICADOR DE CONEXIÓN
-============================================================ */
-
-function actualizarEstadoConexion(
-  mensaje,
-  conectado
-) {
-
-  const indicador = document.getElementById(
-    "connection-status"
-  );
-
-  if (!indicador) {
-    return;
-  }
+  if (!indicador) return;
 
   indicador.textContent = mensaje;
 
-  indicador.style.color = conectado
-    ? "#198754"
-    : "#d52b35";
+  indicador.classList.remove(
+    "status-success",
+    "status-error",
+    "status-warning"
+  );
 
-}
-
-
-/* ============================================================
-   4. COMPROBAR PERMISOS OPERATIVOS
-============================================================ */
-
-function verificarPermisosOperativos() {
-
-  if (typeof puedeOperar !== "function") {
-    return false;
+  if (estado === "success") {
+    indicador.classList.add("status-success");
+  } else if (estado === "error") {
+    indicador.classList.add("status-error");
+  } else if (estado === "warning") {
+    indicador.classList.add("status-warning");
   }
-
-  return puedeOperar();
-
 }
 
 
 /* ============================================================
-   5. CONTROL DE ERRORES GENERALES
+   INICIAR APLICACIÓN
 ============================================================ */
 
-window.addEventListener("error", event => {
-
-  console.error(
-    "Error general de la aplicación:",
-    event.message
-  );
-
-});
-
-
-window.addEventListener("unhandledrejection", event => {
-
-  console.error(
-    "Error en operación asíncrona:",
-    event.reason
-  );
-
-});
-
-
-/* ============================================================
-   6. INICIAR APLICACIÓN
-============================================================ */
-
-document.addEventListener("DOMContentLoaded", () => {
-
+document.addEventListener("DOMContentLoaded", function () {
   inicializarAplicacion();
-
 });
